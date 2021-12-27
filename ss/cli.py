@@ -1,3 +1,7 @@
+from .assignment import assignment, emails
+from .store import store_assignments, read_assignments
+from .emails import send_email
+
 import click
 
 from email.mime.text import MIMEText
@@ -5,19 +9,24 @@ from email.mime.multipart import MIMEMultipart
 
 from omegaconf import OmegaConf
 
-from .assignment import assignment, emails
-from .store import store_assignments, read_assignments
-from .emails import send_email
+from pathlib import Path
 
 
 @click.group()
-@click.option("-c", "--config", type=str, required=True)
+@click.argument(
+    "config-dir",
+    type=click.Path(exists=True),
+    help="The directory containing your configs. Should contain a config.yaml, and optionally "
+    "a content.txt, email_footer.txt, and email_header.txt containing the content of the "
+    "automatic email.",
+)
 @click.pass_context
-def cli(ctx, config):
+def cli(ctx, config_dir):
+    config_dir = Path(config_dir)
     ctx.ensure_object(dict)
-    c = OmegaConf.load(f"configs/{config}/config.yaml")
+    c = OmegaConf.load(config_dir / "config.yaml")
     ctx.obj["config"] = c
-    ctx.obj["directory"] = f"configs/{config}"
+    ctx.obj["directory"] = config_dir
 
 
 @cli.command()
@@ -61,6 +70,8 @@ def assignments(ctx, real):
         message.attach(part2)
 
         if real:
-            send_email(c.sender, participant_emails[gifter.lower()], c.password, message)
+            send_email(
+                c.sender, participant_emails[gifter.lower()], c.password, message
+            )
         else:
             print(gifter, giftee)
