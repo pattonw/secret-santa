@@ -5,9 +5,9 @@ from email.mime.multipart import MIMEMultipart
 
 from omegaconf import OmegaConf
 
-from assignment import assignment, emails
-from store import store_assignments, read_assignments
-from send_email import send_email
+from .assignment import assignment, emails
+from .store import store_assignments, read_assignments
+from .emails import send_email
 
 
 @click.group()
