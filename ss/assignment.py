@@ -85,7 +85,6 @@ def assignment(config, history):
     # minimize historical overlap
     # simply adds 1 extra weight to any assignment that has been made before
     for date, previous_assignment in history.items():
-        print(previous_assignment)
         for gifter, giftee in previous_assignment:
             var_id = var_ids[(gifter, giftee)]
             weights[var_id] += 1

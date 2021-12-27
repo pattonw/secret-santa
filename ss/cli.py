@@ -13,14 +13,14 @@ from .emails import send_email
 @click.group()
 @click.option("-c", "--config", type=str, required=True)
 @click.pass_context
-def send(ctx, config):
+def cli(ctx, config):
     ctx.ensure_object(dict)
     c = OmegaConf.load(f"configs/{config}/config.yaml")
     ctx.obj["config"] = c
     ctx.obj["directory"] = f"configs/{config}"
 
 
-@send.command()
+@cli.command()
 @click.option("--real/--test", default=False)
 @click.pass_context
 def assignments(ctx, real):
@@ -64,7 +64,3 @@ def assignments(ctx, real):
             send_email(c.sender, participant_emails[gifter.lower()], c.password, message)
         else:
             print(gifter, giftee)
-
-
-if __name__ == "__main__":
-    send()
