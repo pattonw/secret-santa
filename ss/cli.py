@@ -10,18 +10,16 @@ from email.mime.multipart import MIMEMultipart
 from omegaconf import OmegaConf
 
 from pathlib import Path
+from pprint import pprint
 
 
 @click.group()
-@click.argument(
-    "config-dir",
-    type=click.Path(exists=True),
-    help="The directory containing your configs. Should contain a config.yaml, and optionally "
-    "a content.txt, email_footer.txt, and email_header.txt containing the content of the "
-    "automatic email.",
-)
+@click.argument("config-dir", type=click.Path(exists=True))
 @click.pass_context
 def cli(ctx, config_dir):
+    """
+    CONFIG-DIR is the directory containing the configs for your secret santa assignments.
+    """
     config_dir = Path(config_dir)
     ctx.ensure_object(dict)
     c = OmegaConf.load(config_dir / "config.yaml")
@@ -30,15 +28,61 @@ def cli(ctx, config_dir):
 
 
 @cli.command()
-@click.option("--real/--test", default=False)
 @click.pass_context
-def assignments(ctx, real):
+def print_history(ctx):
+    historical_assignments = {
+        k: {v1: v2 for v1, v2 in v}
+        for k, v in read_assignments(ctx.obj["directory"], history=True).items()
+    }
+    pprint("Historical assignments:")
+    pprint(historical_assignments)
+
+
+@cli.command()
+@click.pass_context
+def print_assignments(ctx):
+    historical_assignments = {
+        a: b for a, b in read_assignments(ctx.obj["directory"], history=False)
+    }
+    pprint("Assignments:")
+    pprint(historical_assignments)
+
+
+@cli.command()
+@click.option(
+    "--save/--test",
+    default=False,
+    help="Whether to save the results of this assignment. "
+    "If true assignments will be saved to history file. "
+    "If false assignments will be printed to terminal.",
+)
+@click.pass_context
+def new_assignments(ctx, save):
+    c = ctx.obj["config"]
+
+    history = read_assignments(ctx.obj["directory"], history=True)
+    assignments = list(assignment(c, history))
+    if save:
+        store_assignments(ctx.obj["directory"], assignments)
+    else:
+        print("Assignments:")
+        pprint({a: b for a, b in assignments})
+
+
+@cli.command()
+@click.option(
+    "--real/--test",
+    default=False,
+    help="Whether to send assignments to participants or run a test. "
+    "If False will send an email to the organizer with each participants name and email. "
+    "If True will send assignments to each participant.",
+)
+@click.pass_context
+def email(ctx, real):
     c = ctx.obj["config"]
 
     participant_emails = emails(c)
-    history = read_assignments(ctx.obj["directory"])
-    assignments = list(assignment(c, history))
-    store_assignments(ctx.obj["directory"], assignments)
+    assignments = read_assignments(ctx.obj["directory"], history=False)
 
     for gifter, giftee in assignments:
         gifter, giftee = gifter.capitalize(), giftee.capitalize()

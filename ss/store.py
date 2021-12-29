@@ -18,11 +18,23 @@ def store_assignments(directory, assignments):
         f.write(json.dumps(assignments))
 
 
-def read_assignments(directory):
+def read_assignments(directory, history=True):
     history_dir = Path(directory, "history")
     if not history_dir.exists():
         history_dir.mkdir(parents=True)
-    return {
-        history_file.name: json.loads(history_file.open().read())
-        for history_file in history_dir.iterdir()
-    }
+    if history:
+        historical_assignments = {
+            history_file.name: json.loads(history_file.open().read())
+            for history_file in history_dir.iterdir()
+        }
+        return historical_assignments
+    else:
+        year = datetime.datetime.now().year
+        try:
+            assignments = json.loads((history_dir / f"{year}").open().read())
+            return assignments
+        except FileNotFoundError as e:
+            raise ValueError(
+                f"Assignments have not yet been created for {year}! "
+                f"Please run `new-assignments --save`"
+            ) from e
