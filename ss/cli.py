@@ -30,6 +30,9 @@ def cli(ctx, config_dir):
 @cli.command()
 @click.pass_context
 def print_history(ctx):
+    """
+    print history of annual assignments made
+    """
     historical_assignments = {
         k: {v1: v2 for v1, v2 in v}
         for k, v in read_assignments(ctx.obj["directory"], history=True).items()
@@ -41,6 +44,9 @@ def print_history(ctx):
 @cli.command()
 @click.pass_context
 def print_assignments(ctx):
+    """
+    print current assignments
+    """
     historical_assignments = {
         a: b for a, b in read_assignments(ctx.obj["directory"], history=False)
     }
@@ -58,6 +64,9 @@ def print_assignments(ctx):
 )
 @click.pass_context
 def new_assignments(ctx, save):
+    """
+    create new assignments
+    """
     c = ctx.obj["config"]
 
     history = read_assignments(ctx.obj["directory"], history=True)
@@ -79,6 +88,9 @@ def new_assignments(ctx, save):
 )
 @click.pass_context
 def email(ctx, real):
+    """
+    send out emails with assignments
+    """
     c = ctx.obj["config"]
 
     participant_emails = emails(c)
