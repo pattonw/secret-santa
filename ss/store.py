@@ -1,9 +1,13 @@
 import datetime
 import json
 from pathlib import Path
+import base64
+
+from cryptography.fernet import Fernet
+import hashlib
 
 
-def store_assignments(directory, assignments):
+def store_assignments(directory, assignments, key=None):
     now = datetime.datetime.now()
     history_dir = Path(directory, "history")
     if not history_dir.exists():
@@ -14,24 +18,52 @@ def store_assignments(directory, assignments):
             f"Assignments already exist for year {now.year}!"
             f"To create new assignments please delete {history_file} first."
         )
-    with history_file.open("w") as f:
-        f.write(json.dumps(assignments))
+
+    if key is None:
+        with history_file.open("w") as f:
+            f.write(json.dumps(assignments))
+    else:
+        m = hashlib.sha256()
+        m.update(key)
+        key = base64.urlsafe_b64encode(m.digest())
+        fernet = Fernet(key)
+        encrypted = [
+            (k, fernet.encrypt(v.encode()).decode("utf-8")) for k, v in assignments
+        ]
+        for a, b in encrypted:
+            c = fernet.decrypt(bytes(b, "utf-8"))
+        with history_file.open("w") as f:
+            f.write(json.dumps(encrypted))
 
 
-def read_assignments(directory, history=True):
+def load(file, key=None):
+    raw = json.loads(file.open().read())
+    if key is None:
+        return raw
+    else:
+
+        m = hashlib.sha256()
+        m.update(key)
+        key = base64.urlsafe_b64encode(m.digest())
+        fernet = Fernet(key)
+        decoded = [(a, fernet.decrypt(bytes(b, "utf-8")).decode("utf-8")) for a, b in raw]
+        return decoded
+
+
+def read_assignments(directory, history=True, key=None):
     history_dir = Path(directory, "history")
     if not history_dir.exists():
         history_dir.mkdir(parents=True)
     if history:
         historical_assignments = {
-            history_file.name: json.loads(history_file.open().read())
+            history_file.name: load(history_file, key=key)
             for history_file in history_dir.iterdir()
         }
         return historical_assignments
     else:
         year = datetime.datetime.now().year
         try:
-            assignments = json.loads((history_dir / f"{year}").open().read())
+            assignments = load((history_dir / f"{year}"), key=key)
             return assignments
         except FileNotFoundError as e:
             raise ValueError(

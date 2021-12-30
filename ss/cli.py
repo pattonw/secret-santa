@@ -42,13 +42,24 @@ def print_history(ctx):
 
 
 @cli.command()
+@click.option(
+    "--decode/--raw",
+    default=False,
+    help="Whether to decode the secret string into readable text.",
+)
 @click.pass_context
-def print_assignments(ctx):
+def print_assignments(ctx, decode):
     """
     print current assignments
     """
+
+    if decode:
+        key = bytes((ctx.obj["directory"] / "config.yaml").open().read(), "utf-8")
+    else:
+        key = None
+
     historical_assignments = {
-        a: b for a, b in read_assignments(ctx.obj["directory"], history=False)
+        a: b for a, b in read_assignments(ctx.obj["directory"], history=False, key=key)
     }
     pprint("Assignments:")
     pprint(historical_assignments)
@@ -62,17 +73,27 @@ def print_assignments(ctx):
     "If true assignments will be saved to history file. "
     "If false assignments will be printed to terminal.",
 )
+@click.option(
+    "--encode/--raw",
+    default=True,
+    help="Whether to hash assignments to keep them secret. Even from you.",
+)
 @click.pass_context
-def new_assignments(ctx, save):
+def new_assignments(ctx, save, encode):
     """
     create new assignments
     """
     c = ctx.obj["config"]
 
-    history = read_assignments(ctx.obj["directory"], history=True)
+    if encode:
+        key = bytes((ctx.obj["directory"] / "config.yaml").open().read(), "utf-8")
+    else:
+        key = None
+
+    history = read_assignments(ctx.obj["directory"], history=True, key=key)
     assignments = list(assignment(c, history))
     if save:
-        store_assignments(ctx.obj["directory"], assignments)
+        store_assignments(ctx.obj["directory"], assignments, key=key)
     else:
         print("Assignments:")
         pprint({a: b for a, b in assignments})
