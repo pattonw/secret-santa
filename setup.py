@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="secret-santa",
+    name="ss",
     version="0.1",
     url="https://github.com/pattonw/secret-santa",
     author="William Patton",
