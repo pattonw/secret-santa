@@ -1,5 +1,6 @@
+from asyncore import write
 from .assignment import assignment, emails
-from .store import store_assignments, read_assignments
+from .store import store_assignments, read_assignments, write_assignments, load
 from .emails import send_email
 
 import click
@@ -67,6 +68,44 @@ def print_assignments(ctx, decode):
 
 @cli.command()
 @click.option(
+    "--encode/--decode",
+    default=False,
+    help="Whether to decode the secret string into readable text.",
+)
+@click.option(
+    "-in",
+    "--input-file",
+    type=click.Path(exists=True, dir_okay=False),
+    help="The file to encode or decode.",
+)
+@click.option(
+    "-out",
+    "--output-file",
+    type=click.Path(exists=False),
+    help="The file to save encoded or decoded data.",
+)
+@click.pass_context
+def recode_assignments(ctx, encode, input_file, output_file):
+    """
+    Either decode and write decoded assignments to new file
+    or encode and write encoded assignments to file
+    """
+
+    key = bytes((ctx.obj["directory"] / "config.yaml").open().read(), "utf-8")
+
+    input_file = Path(input_file)
+    output_file = Path(output_file)
+
+    if encode:
+        assignments = load(input_file, key=None)
+        write_assignments(output_file, assignments, key=key)
+    else:
+        assignments = load(input_file, key=key)
+        write_assignments(output_file, assignments, key=None)
+
+
+@cli.command()
+@click.option(
     "--save/--test",
     default=False,
     help="Whether to save the results of this assignment. "
@@ -122,11 +161,19 @@ def email(ctx, real):
         gifter, giftee = gifter.capitalize(), giftee.capitalize()
 
         header = open(f"{ctx.obj['directory']}/email_header.txt").read()
-        content = (
-            open(f"{ctx.obj['directory']}/content.txt")
-            .read()
-            .format(gifter=gifter, giftee=giftee, gifter_upper=gifter.upper())
-        )
+        if real:
+            content = (
+                open(f"{ctx.obj['directory']}/content.txt")
+                .read()
+                .format(gifter=gifter, giftee=giftee, gifter_upper=gifter.upper())
+            )
+        else:
+            content = (
+                open(f"{ctx.obj['directory']}/content.txt")
+                .read()
+                .format(gifter="gifter", giftee="giftee", gifter_upper="gifter".upper())
+            )
+
         footer = open(f"{ctx.obj['directory']}/email_footer.txt").read()
 
         html = header + content + footer
@@ -140,7 +187,14 @@ def email(ctx, real):
             message["To"] = c.sender
 
         # part1 = MIMEText(content, "plain")
-        part2 = MIMEText(html, "html")
+        if real:
+            part2 = MIMEText(html, "html")
+        else:
+            part2 = MIMEText(
+                f"gifters {sorted(g[0] for g in assignments)} "
+                f"have giftees {sorted(g[1] for g in assignments)}\n\n" + html,
+                "html",
+            )
 
         # Add HTML/plain-text parts to MIMEMultipart message
         # The email client will try to render the last part first
@@ -154,4 +208,3 @@ def email(ctx, real):
         else:
             send_email(c.sender, c.sender, c.password, message)
             break
-            print(gifter, giftee)
