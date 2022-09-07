@@ -113,9 +113,10 @@ def email(ctx, real):
     send out emails with assignments
     """
     c = ctx.obj["config"]
+    key = bytes((ctx.obj["directory"] / "config.yaml").open().read(), "utf-8")
 
     participant_emails = emails(c)
-    assignments = read_assignments(ctx.obj["directory"], history=False)
+    assignments = read_assignments(ctx.obj["directory"], history=False, key=key)
 
     for gifter, giftee in assignments:
         gifter, giftee = gifter.capitalize(), giftee.capitalize()
@@ -151,4 +152,6 @@ def email(ctx, real):
                 c.sender, participant_emails[gifter.lower()], c.password, message
             )
         else:
+            send_email(c.sender, c.sender, c.password, message)
+            break
             print(gifter, giftee)

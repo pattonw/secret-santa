@@ -12,7 +12,7 @@ def store_assignments(directory, assignments, key=None):
     history_dir = Path(directory, "history")
     if not history_dir.exists():
         history_dir.mkdir(parents=True)
-    history_file = history_dir / f"{now.year}"
+    history_file = history_dir / f"{now.year}.json"
     if history_file.exists():
         raise FileExistsError(
             f"Assignments already exist for year {now.year}!"
@@ -56,14 +56,14 @@ def read_assignments(directory, history=True, key=None):
         history_dir.mkdir(parents=True)
     if history:
         historical_assignments = {
-            history_file.name: load(history_file, key=key)
+            history_file.name[:-5]: load(history_file, key=key)
             for history_file in history_dir.iterdir()
         }
         return historical_assignments
     else:
         year = datetime.datetime.now().year
         try:
-            assignments = load((history_dir / f"{year}"), key=key)
+            assignments = load((history_dir / f"{year}.json"), key=key)
             return assignments
         except FileNotFoundError as e:
             raise ValueError(
