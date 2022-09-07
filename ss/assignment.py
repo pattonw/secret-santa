@@ -86,8 +86,10 @@ def assignment(config, history):
     # simply adds 1 extra weight to any assignment that has been made before
     for date, previous_assignment in history.items():
         for gifter, giftee in previous_assignment:
-            var_id = var_ids[(gifter, giftee)]
-            weights[var_id] += 1
+            var_id = var_ids.get((gifter, giftee))
+            if var_id is not None:
+                # handle case someone left and no longer has a variable
+                weights[var_id] += 1
 
     m.objective = minimize(
         xsum(variables[i] * weights[i] for i in range(len(variables)))
