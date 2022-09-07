@@ -13,4 +13,10 @@ setup(
             secret-santa=ss.cli:cli
         """,
     include_package_data=True,
+    install_requires=[
+        "mip",
+        "cryptography",
+        "click",
+        "omegaconf"
+    ]
 )
