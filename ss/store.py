@@ -19,6 +19,9 @@ def store_assignments(directory, assignments, key=None):
             f"To create new assignments please delete {history_file} first."
         )
 
+    write_assignments(history_file, assignments, key)
+
+def write_assignments(history_file, assignments, key=None):
     if key is None:
         with history_file.open("w") as f:
             f.write(json.dumps(assignments))
