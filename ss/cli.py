@@ -29,17 +29,43 @@ def cli(ctx, config_dir):
 
 
 @cli.command()
+@click.option(
+    "--decode/--raw",
+    default=False,
+    help="Whether to decode the secret string into readable text.",
+)
 @click.pass_context
-def print_history(ctx):
+def print_history(ctx, decode):
     """
     print history of annual assignments made
     """
+    if decode:
+        key = bytes((ctx.obj["directory"] / "config.yaml").open().read(), "utf-8")
+    else:
+        key = None
     historical_assignments = {
         k: {v1: v2 for v1, v2 in v}
-        for k, v in read_assignments(ctx.obj["directory"], history=True).items()
+        for k, v in read_assignments(ctx.obj["directory"], history=True, key=key).items()
     }
     pprint("Historical assignments:")
     pprint(historical_assignments)
+
+
+@cli.command()
+@click.argument(
+    "year",
+    type=int,
+    # help="Which year to encode.",
+)
+@click.pass_context
+def encode(ctx, year):
+    """
+    print history of annual assignments made
+    """
+    f_to_encode = ctx.obj["directory"] / "history"/ f"{year}.json"
+    to_encode = load(f_to_encode)
+    key = bytes((ctx.obj["directory"] / "config.yaml").open().read(), "utf-8")
+    write_assignments(f_to_encode, to_encode, key)
 
 
 @cli.command()

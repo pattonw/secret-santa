@@ -6,6 +6,23 @@ import base64
 from cryptography.fernet import Fernet
 import hashlib
 
+def write_assignments(file_path: Path, assignments, key=None):
+    if key is None:
+        with file_path.open("w") as f:
+            f.write(json.dumps(assignments))
+    else:
+        m = hashlib.sha256()
+        m.update(key)
+        key = base64.urlsafe_b64encode(m.digest())
+        fernet = Fernet(key)
+        encrypted = [
+            (k, fernet.encrypt(v.encode()).decode("utf-8")) for k, v in assignments
+        ]
+        for a, b in encrypted:
+            c = fernet.decrypt(bytes(b, "utf-8"))
+        with file_path.open("w") as f:
+            f.write(json.dumps(encrypted))
+
 
 def store_assignments(directory, assignments, key=None):
     now = datetime.datetime.now()
@@ -18,25 +35,7 @@ def store_assignments(directory, assignments, key=None):
             f"Assignments already exist for year {now.year}!"
             f"To create new assignments please delete {history_file} first."
         )
-
     write_assignments(history_file, assignments, key)
-
-def write_assignments(history_file, assignments, key=None):
-    if key is None:
-        with history_file.open("w") as f:
-            f.write(json.dumps(assignments))
-    else:
-        m = hashlib.sha256()
-        m.update(key)
-        key = base64.urlsafe_b64encode(m.digest())
-        fernet = Fernet(key)
-        encrypted = [
-            (k, fernet.encrypt(v.encode()).decode("utf-8")) for k, v in assignments
-        ]
-        for a, b in encrypted:
-            c = fernet.decrypt(bytes(b, "utf-8"))
-        with history_file.open("w") as f:
-            f.write(json.dumps(encrypted))
 
 
 def load(file, key=None):
