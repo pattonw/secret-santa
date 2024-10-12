@@ -1,4 +1,3 @@
-from asyncore import write
 from .assignment import assignment, emails
 from .store import store_assignments, read_assignments, write_assignments, load
 from .emails import send_email
