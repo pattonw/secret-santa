@@ -152,8 +152,11 @@
   .emergency summary { cursor: pointer; font-size: 13px; letter-spacing: .5px; color: var(--wax); list-style: none; display: inline-flex; align-items: center; gap: 6px; border: 1px dashed var(--wax); border-radius: 999px; padding: 4px 12px; }
   .emergency summary::-webkit-details-marker { display: none; }
   .emergency summary::before { content: "\1F6A8"; font-size: 13px; }
-  .fallback { margin-top: 10px; font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
-  .fallback .item { margin-top: 10px; }
+  .fallback {
+    margin: 10px 0 0 10px; padding: 12px 16px 14px; font-size: 14px; color: var(--ink-soft); line-height: 1.7;
+    background: rgba(120, 80, 20, .07); border-left: 3px solid var(--wax); border-radius: 0 6px 6px 0;
+  }
+  .fallback .item { margin-top: 8px; }
   .fallback .item span { display: block; font-style: italic; }
   .fallback code { display: inline-block; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; background: rgba(0,0,0,.05); padding: 3px 8px; border-radius: 4px; word-break: break-all; margin: 2px 0 6px; }
   .fallback .btns { display: flex; gap: 8px; }
@@ -227,14 +230,12 @@
         <path d="M24 50 L28 82 L44 82 L48 50 Z" fill="#dfe9f2" opacity=".9"/>
         <path d="M26 58 L29 82 L43 82 L46 58 Z" fill="#ffffff"/>
         <!-- plate -->
-        <ellipse cx="70" cy="80" rx="24" ry="5" fill="#e8e2d2"/>
+        <ellipse cx="70" cy="80" rx="25" ry="5.5" fill="#ffffff" stroke="#d8d2c4" stroke-width="1"/>
+        <ellipse cx="70" cy="79.5" rx="17" ry="3" fill="#f3f1ec"/>
         <!-- cookies -->
         <circle cx="62" cy="74" r="8" fill="#b9823f"/><circle cx="59" cy="72" r="1.4" fill="#4a2a14"/><circle cx="65" cy="76" r="1.4" fill="#4a2a14"/><circle cx="64" cy="70" r="1.2" fill="#4a2a14"/>
         <circle cx="78" cy="75" r="8" fill="#c08c48"/><circle cx="76" cy="72" r="1.4" fill="#4a2a14"/><circle cx="81" cy="77" r="1.4" fill="#4a2a14"/><circle cx="80" cy="71" r="1.2" fill="#4a2a14"/>
         <circle cx="70" cy="66" r="7" fill="#b07a3a"/><circle cx="68" cy="64" r="1.3" fill="#4a2a14"/><circle cx="72" cy="68" r="1.3" fill="#4a2a14"/>
-        <!-- note -->
-        <rect x="52" y="96" width="30" height="12" rx="1" fill="#f1e3c4" transform="rotate(-6 67 102)"/>
-        <line x1="56" y1="101" x2="76" y2="99" stroke="#8b1e2d" stroke-width="1.2" transform="rotate(-6 67 102)"/>
       </svg>
     </div>
     <div class="actions" id="wishlist-actions"></div>
@@ -339,7 +340,7 @@
       return "https://mail.google.com/mail/?view=cm&to=" + encodeURIComponent(address) + "&su=" + encodeURIComponent(subject);
     };
     var fallback = $("post-fallback");
-    fallback.appendChild(document.createTextNode("Your own Secret Santa stays anonymous, and " + data.t + " only ever sees that a letter came from their Santa. If the buttons do nothing, write from any mail app to:"));
+    fallback.appendChild(document.createTextNode("Write from any mail app to:"));
     [
       { label: "your Secret Santa", address: local + "+to-santa@" + domain, subject: "A letter for my Secret Santa" },
       { label: data.t, address: local + "+to-giftee@" + domain, subject: "A letter for " + data.t }
