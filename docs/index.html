@@ -16,7 +16,15 @@
     --night-2: #143826;
     --paper: #f1e3c4;
     --paper-edge: #d9c89f;
-    --parchment: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .36 0 0 0 0 .25 0 0 0 0 .1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    /* mottled parchment from plain gradients: no SVG filters, which WebKit can mis-paint on a cold load */
+    --parchment:
+      radial-gradient(ellipse at 18% 22%, rgba(120,80,20,.10) 0, transparent 45%),
+      radial-gradient(ellipse at 78% 66%, rgba(120,80,20,.13) 0, transparent 42%),
+      radial-gradient(circle at 62% 12%, rgba(255,250,235,.45) 0, transparent 38%),
+      radial-gradient(circle at 28% 84%, rgba(120,80,20,.11) 0, transparent 40%),
+      radial-gradient(circle at 90% 20%, rgba(120,80,20,.08) 0, transparent 30%),
+      repeating-linear-gradient(0deg, rgba(120,80,20,.03) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(90deg, rgba(120,80,20,.02) 0 1px, transparent 1px 5px);
     --ink: #2b2419;
     --ink-soft: #5b5043;
     --wax: #8b1e2d;
@@ -27,7 +35,7 @@
     --envelope-inside: #b89a6a;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; min-height: 100%; }
+  html, body { margin: 0; min-height: 100%; -webkit-tap-highlight-color: transparent; }
   body {
     background: radial-gradient(ellipse at top, var(--night-2), var(--night) 70%);
     color: var(--paper);
