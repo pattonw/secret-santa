@@ -14,8 +14,9 @@
   :root {
     --night: #0e2a1f;
     --night-2: #143826;
-    --paper: #fbf5e6;
-    --paper-edge: #e9dfc6;
+    --paper: #f1e3c4;
+    --paper-edge: #d9c89f;
+    --parchment: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .36 0 0 0 0 .25 0 0 0 0 .1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     --ink: #2b2419;
     --ink-soft: #5b5043;
     --wax: #8b1e2d;
@@ -48,21 +49,21 @@
     position: relative; width: min(88vw, 420px); aspect-ratio: 1.55; margin: 70px auto 0;
     background: var(--envelope); border-radius: 6px;
     box-shadow: 0 30px 60px rgba(0,0,0,.45);
-    transform-style: preserve-3d;
   }
   .envelope .inside {
     position: absolute; inset: 0; background: var(--envelope-inside); border-radius: 6px;
   }
   .envelope .letter-peek {
-    position: absolute; left: 7%; right: 7%; bottom: 6%; height: 92%;
-    background: var(--paper); border-radius: 4px 4px 0 0;
-    box-shadow: 0 -4px 20px rgba(0,0,0,.15);
-    transform: translateY(0); transition: transform 1.1s cubic-bezier(.2,.8,.2,1) .55s;
+    position: absolute; left: 7%; right: 7%; bottom: 6%; height: 92%; z-index: 1;
+    background: var(--parchment), radial-gradient(ellipse at 30% 20%, #f7ecd2, var(--paper) 60%, #e6d3ad);
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,.15), inset 0 0 40px rgba(120,80,20,.12);
+    transform: translateY(0); transition: transform 1.1s cubic-bezier(.2,.8,.2,1) .7s;
     display: flex; align-items: flex-start; justify-content: center; padding-top: 18px;
     color: var(--ink-soft); font-style: italic; font-size: 15px;
   }
   .envelope .pocket {
-    position: absolute; inset: 0; border-radius: 6px; overflow: hidden;
+    position: absolute; inset: 0; border-radius: 6px; overflow: hidden; z-index: 2;
   }
   .envelope .pocket::before, .envelope .pocket::after {
     content: ""; position: absolute; top: 0; width: 50%; height: 100%;
@@ -71,18 +72,29 @@
   .envelope .pocket::before { left: 0; clip-path: polygon(0 0, 100% 50%, 0 100%); }
   .envelope .pocket::after { right: 0; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
   .envelope .bottom {
-    position: absolute; inset: 0; border-radius: 6px; background: var(--envelope);
+    position: absolute; inset: 0; border-radius: 6px; z-index: 2;
+    background: linear-gradient(180deg, #ecdfbf, var(--envelope));
     clip-path: polygon(0 100%, 50% 45%, 100% 100%);
   }
   .envelope .flap {
-    position: absolute; left: 0; right: 0; top: 0; height: 55%;
-    background: var(--envelope-dark); border-radius: 6px 6px 0 0;
-    clip-path: polygon(0 0, 100% 0, 50% 100%);
-    transform-origin: top center; transition: transform .9s cubic-bezier(.6,.05,.3,1);
+    position: absolute; left: 0; right: 0; top: 0; height: 58%;
+    filter: drop-shadow(0 3px 3px rgba(0,0,0,.28));
+    transform-origin: top center; transition: transform .9s cubic-bezier(.6,.05,.3,1), z-index 0s .45s;
     z-index: 3;
   }
+  .envelope .flap::before {
+    content: ""; position: absolute; inset: 0; border-radius: 6px 6px 0 0;
+    background: linear-gradient(180deg, #d6c394, #c4ad7a);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+  .envelope .flap::after {
+    /* inner edge line so the flap reads as a separate piece of paper */
+    content: ""; position: absolute; left: 3%; right: 3%; top: 0; height: 94%;
+    background: linear-gradient(180deg, #dccb9f, #c9b283);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
   .envelope.open .flap { transform: rotateX(180deg); z-index: 0; }
-  .envelope.open .letter-peek { transform: translateY(-62%); }
+  .envelope.open .letter-peek { transform: translateY(-78%); }
   .seal {
     position: absolute; left: 50%; top: 55%; width: 66px; height: 66px; margin: -33px 0 0 -33px;
     border-radius: 50%; background: radial-gradient(circle at 35% 35%, #b4323f, var(--wax) 55%, var(--wax-dark));
@@ -108,17 +120,18 @@
 
   /* letter */
   .letter {
-    width: min(100%, 560px); background: var(--paper); color: var(--ink); border-radius: 6px;
-    padding: 44px 40px 36px; box-shadow: 0 30px 70px rgba(0,0,0,.5);
+    width: min(100%, 560px); color: var(--ink); border-radius: 4px;
+    padding: 44px 40px 36px;
+    background: var(--parchment), radial-gradient(ellipse at 20% 10%, #f8edd4 0%, var(--paper) 55%, #e2cfa6 100%);
+    box-shadow: 0 30px 70px rgba(0,0,0,.5), inset 0 0 60px rgba(120,80,20,.14), inset 0 0 6px rgba(120,80,20,.2);
     animation: letter-in .9s cubic-bezier(.2,.8,.2,1);
-    background-image: linear-gradient(transparent 0, transparent calc(100% - 1px), rgba(0,0,0,.025) 100%);
   }
   @keyframes letter-in { from { opacity: 0; transform: translateY(40px) scale(.96); } }
   .letterhead { font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--wax); border-bottom: 1px solid var(--paper-edge); padding-bottom: 14px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .letter p { font-size: 18px; line-height: 1.65; margin: 0 0 16px; }
   .salutation { margin-top: 26px !important; }
-  .reveal { text-align: center; margin: 28px 0 24px; }
-  .reveal .lead { font-style: italic; color: var(--ink-soft); font-size: 17px; margin-bottom: 6px; }
+  .reveal { display: flex; align-items: flex-end; justify-content: center; gap: 10px; margin: 26px 0 24px; }
+  .reveal svg { width: clamp(64px, 18vw, 96px); height: auto; flex: 0 0 auto; }
   .reveal .name {
     font-family: "Caveat", "Bradley Hand", cursive; font-size: clamp(46px, 11vw, 72px); line-height: 1.05; color: var(--wax);
     display: inline-block; padding: 0 10px 6px; border-bottom: 3px solid var(--gold);
@@ -135,7 +148,11 @@
   .post { margin-top: 30px; padding-top: 22px; border-top: 1px dashed var(--paper-edge); }
   .post h2 { font-size: 13px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--wax); margin: 0 0 8px; font-weight: 600; }
   .post .note { margin-bottom: 16px; }
-  .fallback { margin-top: 14px; font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
+  .emergency { margin: 14px 0 6px; }
+  .emergency summary { cursor: pointer; font-size: 13px; letter-spacing: .5px; color: var(--wax); list-style: none; display: inline-flex; align-items: center; gap: 6px; border: 1px dashed var(--wax); border-radius: 999px; padding: 4px 12px; }
+  .emergency summary::-webkit-details-marker { display: none; }
+  .emergency summary::before { content: "\1F6A8"; font-size: 13px; }
+  .fallback { margin-top: 10px; font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
   .fallback .item { margin-top: 10px; }
   .fallback .item span { display: block; font-style: italic; }
   .fallback code { display: inline-block; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; background: rgba(0,0,0,.05); padding: 3px 8px; border-radius: 4px; word-break: break-all; margin: 2px 0 6px; }
@@ -187,7 +204,39 @@
     <div class="letterhead"><span id="lh-family">Secret Santa</span><span id="lh-year"></span></div>
     <p class="salutation">Dear <span id="gifter"></span>,</p>
     <p>You have been chosen. This year, quietly and with great care, you are the Secret Santa for</p>
-    <div class="reveal"><div class="lead">none other than</div><div class="name" id="giftee"></div></div>
+    <div class="reveal">
+      <svg viewBox="0 0 100 120" aria-hidden="true">
+        <!-- tree -->
+        <polygon points="50,8 30,42 70,42" fill="#2f7a4a"/>
+        <polygon points="50,26 24,66 76,66" fill="#2a6e42"/>
+        <polygon points="50,46 18,92 82,92" fill="#245f39"/>
+        <rect x="44" y="92" width="12" height="12" fill="#6b4425"/>
+        <polygon points="50,0 52.8,6.4 59.5,6.8 54.4,11.2 56,18 50,14.4 44,18 45.6,11.2 40.5,6.8 47.2,6.4" fill="#e8c35a"/>
+        <circle cx="42" cy="40" r="3" fill="#c0303f"/><circle cx="60" cy="56" r="3" fill="#e8c35a"/>
+        <circle cx="36" cy="74" r="3" fill="#e8c35a"/><circle cx="56" cy="80" r="3" fill="#c0303f"/><circle cx="68" cy="68" r="3" fill="#c0303f"/>
+        <!-- presents -->
+        <rect x="8" y="98" width="24" height="18" rx="2" fill="#b4323f"/><rect x="18" y="98" width="4" height="18" fill="#e8c35a"/><rect x="8" y="105" width="24" height="4" fill="#e8c35a"/>
+        <rect x="66" y="102" width="20" height="14" rx="2" fill="#2f6f9c"/><rect x="74" y="102" width="4" height="14" fill="#f1e3c4"/><rect x="66" y="107" width="20" height="3" fill="#f1e3c4"/>
+      </svg>
+      <div class="name" id="giftee"></div>
+      <svg viewBox="0 0 100 120" aria-hidden="true">
+        <!-- table -->
+        <rect x="6" y="82" width="88" height="7" rx="2" fill="#7a4e2a"/>
+        <rect x="14" y="89" width="6" height="28" fill="#6b4425"/><rect x="80" y="89" width="6" height="28" fill="#6b4425"/>
+        <!-- glass of milk -->
+        <path d="M24 50 L28 82 L44 82 L48 50 Z" fill="#dfe9f2" opacity=".9"/>
+        <path d="M26 58 L29 82 L43 82 L46 58 Z" fill="#ffffff"/>
+        <!-- plate -->
+        <ellipse cx="70" cy="80" rx="24" ry="5" fill="#e8e2d2"/>
+        <!-- cookies -->
+        <circle cx="62" cy="74" r="8" fill="#b9823f"/><circle cx="59" cy="72" r="1.4" fill="#4a2a14"/><circle cx="65" cy="76" r="1.4" fill="#4a2a14"/><circle cx="64" cy="70" r="1.2" fill="#4a2a14"/>
+        <circle cx="78" cy="75" r="8" fill="#c08c48"/><circle cx="76" cy="72" r="1.4" fill="#4a2a14"/><circle cx="81" cy="77" r="1.4" fill="#4a2a14"/><circle cx="80" cy="71" r="1.2" fill="#4a2a14"/>
+        <circle cx="70" cy="66" r="7" fill="#b07a3a"/><circle cx="68" cy="64" r="1.3" fill="#4a2a14"/><circle cx="72" cy="68" r="1.3" fill="#4a2a14"/>
+        <!-- note -->
+        <rect x="52" y="96" width="30" height="12" rx="1" fill="#f1e3c4" transform="rotate(-6 67 102)"/>
+        <line x1="56" y1="101" x2="76" y2="99" stroke="#8b1e2d" stroke-width="1.2" transform="rotate(-6 67 102)"/>
+      </svg>
+    </div>
     <div class="actions" id="wishlist-actions"></div>
     <p class="note" id="deadline-note"></p>
     <p class="note" id="notes"></p>
@@ -195,7 +244,10 @@
       <h2>&#128238; Santa's Post</h2>
       <p class="note" id="post-note"></p>
       <div class="actions" id="post-actions"></div>
-      <div class="fallback" id="post-fallback"></div>
+      <details class="emergency" id="post-emergency">
+        <summary>In case of emergency (the buttons don't work)</summary>
+        <div class="fallback" id="post-fallback"></div>
+      </details>
     </section>
     <p class="signoff">Keep it secret, keep it merry.<span class="santa">&mdash; Santa</span></p>
   </article>
@@ -271,7 +323,7 @@
     var mailto = function (tag, subject) {
       return "mailto:" + local + "+" + tag + "@" + domain + "?subject=" + encodeURIComponent(subject);
     };
-    $("post-note").textContent = "Need a hint, a size, or an address? Santa carries letters both ways. Your own Secret Santa stays anonymous, and " + data.t + " will only ever see that a letter came from their Santa.";
+    $("post-note").textContent = "Need a hint, a size, or an address? SSPS (Santa's Secret Post System) will carry your letters with holiday cheer and weapons-grade secrecy to wherever they need to go!";
     var toSanta = document.createElement("a");
     toSanta.className = "btn ghost"; toSanta.href = mailto("to-santa", "A letter for my Secret Santa");
     toSanta.textContent = "Write to your Secret Santa";
@@ -287,7 +339,7 @@
       return "https://mail.google.com/mail/?view=cm&to=" + encodeURIComponent(address) + "&su=" + encodeURIComponent(subject);
     };
     var fallback = $("post-fallback");
-    fallback.appendChild(document.createTextNode("If the buttons do nothing, write from any mail app to:"));
+    fallback.appendChild(document.createTextNode("Your own Secret Santa stays anonymous, and " + data.t + " only ever sees that a letter came from their Santa. If the buttons do nothing, write from any mail app to:"));
     [
       { label: "your Secret Santa", address: local + "+to-santa@" + domain, subject: "A letter for my Secret Santa" },
       { label: data.t, address: local + "+to-giftee@" + domain, subject: "A letter for " + data.t }

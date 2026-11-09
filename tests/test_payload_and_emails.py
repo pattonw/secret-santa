@@ -49,5 +49,7 @@ def test_letter_from_giftee_is_signed(config, tmp_path):
         config, tmp_path, tag="to-santa", recipient="a", counterpart="ana maria", body="Thanks!", year=2026, to="a@example.com"
     )
     assert msg["Reply-To"].endswith("<santa+to-giftee@example.com>")
-    assert "Ana Maria" in msg.get_body(("html",)).get_content()
+    html = msg.get_body(("html",)).get_content()
+    assert "Ana Maria" in html
+    assert "Dear Secret Santa," in html and "Dear A," not in html
     assert plus_address("x.y@gmail.com", "to-santa") == "x.y+to-santa@gmail.com"

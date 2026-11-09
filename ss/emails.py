@@ -115,7 +115,9 @@ def letter_context(config, *, tag: str, recipient: str, counterpart: str, body: 
             subject=f"A letter from {name}",
             link=assignment_link(config, recipient, counterpart, year, base=page_base),
         )
-    context.update(recipient=display_name(recipient), paragraphs=paragraphs, body=body)
+    # a santa's identity is secret, so letters to them are not addressed by name
+    salutation = display_name(recipient) if tag == TAG_TO_GIFTEE else "Secret Santa"
+    context.update(recipient=salutation, paragraphs=paragraphs, body=body)
     return context
 
 
