@@ -159,7 +159,7 @@
   .fallback .btns { display: flex; gap: 8px; }
   .fallback button, .fallback a.mini { font: inherit; font-size: 13px; color: var(--wax); background: transparent; border: 1px solid var(--paper-edge); border-radius: 999px; padding: 3px 10px; cursor: pointer; text-decoration: none; }
   .fallback button:hover, .fallback a.mini:hover { border-color: var(--wax); }
-  .signoff { margin-top: 34px; }
+  .letter .signoff { margin-top: 34px; }
   .signoff .santa { font-family: "Caveat", cursive; font-size: 32px; color: var(--wax); display: block; margin-top: 2px; }
   .footer { margin-top: 26px; font-size: 12px; color: #9bb3a3; text-align: center; letter-spacing: .5px; line-height: 1.7; max-width: 560px; }
   .footer a { color: var(--gold); }
@@ -376,7 +376,7 @@
         $("letter").classList.remove("hidden");
         window.scrollTo({ top: 0, behavior: "smooth" });
       }, reduce ? 0 : 450);
-    }, reduce ? 0 : 1500);
+    }, reduce ? 0 : 2200);
   }
   $("seal").addEventListener("click", open);
   $("break").addEventListener("click", open);
