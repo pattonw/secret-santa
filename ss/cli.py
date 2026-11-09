@@ -268,7 +268,11 @@ def relay(ctx, once, interval, dry_run):
     def current():
         return read_assignments(directory, history=False, key=ctx.obj["key"])
 
-    current()  # fail early if this year's assignments don't exist yet
+    try:
+        current()
+    except ValueError:
+        click.echo(f"no assignments saved for {year} yet, nothing to relay")
+        return
     if once:
         summaries = relay_module.relay_once(c, directory, current(), year, dry_run=dry_run, log=click.echo)
         relayed = sum(s["status"] == "relayed" for s in summaries)
