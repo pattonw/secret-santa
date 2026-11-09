@@ -135,6 +135,11 @@
   .post { margin-top: 30px; padding-top: 22px; border-top: 1px dashed var(--paper-edge); }
   .post h2 { font-size: 13px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--wax); margin: 0 0 8px; font-weight: 600; }
   .post .note { margin-bottom: 16px; }
+  .fallback { margin-top: 14px; font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
+  .fallback .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 4px; }
+  .fallback code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; background: rgba(0,0,0,.05); padding: 2px 6px; border-radius: 4px; word-break: break-all; }
+  .fallback button, .fallback a.mini { font: inherit; font-size: 13px; color: var(--wax); background: transparent; border: 1px solid var(--paper-edge); border-radius: 999px; padding: 3px 10px; cursor: pointer; text-decoration: none; }
+  .fallback button:hover, .fallback a.mini:hover { border-color: var(--wax); }
   .signoff { margin-top: 26px; }
   .signoff .santa { font-family: "Caveat", cursive; font-size: 32px; color: var(--wax); display: block; margin-top: 2px; }
   .footer { margin-top: 26px; font-size: 12px; color: #9bb3a3; text-align: center; letter-spacing: .5px; line-height: 1.7; max-width: 560px; }
@@ -188,6 +193,7 @@
       <h2>&#128238; Santa's Post</h2>
       <p class="note" id="post-note"></p>
       <div class="actions" id="post-actions"></div>
+      <div class="fallback" id="post-fallback"></div>
     </section>
     <p class="signoff">Keep it secret, keep it merry.<span class="santa">&mdash; Santa</span></p>
   </article>
@@ -272,6 +278,31 @@
     toGiftee.textContent = "Write to " + data.t;
     $("post-actions").appendChild(toSanta);
     $("post-actions").appendChild(toGiftee);
+
+    // mailto: only works when the device has a mail app set up, so also show
+    // the addresses with a copy button and a Gmail compose link
+    var gmail = function (address, subject) {
+      return "https://mail.google.com/mail/?view=cm&to=" + encodeURIComponent(address) + "&su=" + encodeURIComponent(subject);
+    };
+    var fallback = $("post-fallback");
+    fallback.appendChild(document.createTextNode("If the buttons do nothing, write from any mail app to:"));
+    [
+      { label: "your Secret Santa", address: local + "+to-santa@" + domain, subject: "A letter for my Secret Santa" },
+      { label: data.t, address: local + "+to-giftee@" + domain, subject: "A letter for " + data.t }
+    ].forEach(function (item) {
+      var row = document.createElement("div"); row.className = "row";
+      var code = document.createElement("code"); code.textContent = item.address;
+      var copy = document.createElement("button"); copy.type = "button"; copy.textContent = "copy";
+      copy.addEventListener("click", function () {
+        var done = function () { copy.textContent = "copied"; setTimeout(function () { copy.textContent = "copy"; }, 1600); };
+        if (navigator.clipboard) { navigator.clipboard.writeText(item.address).then(done, function () { window.prompt("Copy this address", item.address); }); }
+        else { window.prompt("Copy this address", item.address); }
+      });
+      var g = document.createElement("a"); g.className = "mini"; g.href = gmail(item.address, item.subject); g.target = "_blank"; g.rel = "noopener"; g.textContent = "compose in Gmail";
+      var who = document.createElement("span"); who.textContent = item.label + ":";
+      row.appendChild(who); row.appendChild(code); row.appendChild(copy); row.appendChild(g);
+      fallback.appendChild(row);
+    });
   } else {
     document.querySelector(".post").remove();
   }
