@@ -14,7 +14,7 @@ setup(
         """,
     include_package_data=True,
     install_requires=[
-        "mip == 1.5",
+        "mip == 1.16rc0",
         "cryptography",
         "click",
         "omegaconf"
