@@ -1,74 +1,108 @@
-import datetime
-import json
-from pathlib import Path
+"""Persist assignments.  Giftees are encrypted at rest so the organizer can
+take part without seeing who gives to whom.
+
+The key is read from ``<config-dir>/secret.key``.  Older config directories
+without that file fall back to the text of ``config.yaml`` as the key, which
+is what previous versions did; ``secret-santa <dir> rekey`` migrates them.
+"""
+
+from __future__ import annotations
+
 import base64
+import datetime
+import hashlib
+import json
+import secrets
+from pathlib import Path
 
 from cryptography.fernet import Fernet
-import hashlib
 
-def write_assignments(file_path: Path, assignments, key=None):
+KEY_FILE = "secret.key"
+
+
+def current_year() -> int:
+    return datetime.date.today().year
+
+
+def legacy_key(directory) -> bytes:
+    return (Path(directory) / "config.yaml").read_bytes()
+
+
+def has_key_file(directory) -> bool:
+    return (Path(directory) / KEY_FILE).exists()
+
+
+def load_key(directory) -> bytes:
+    key_file = Path(directory) / KEY_FILE
+    if key_file.exists():
+        return key_file.read_bytes().strip()
+    return legacy_key(directory)
+
+
+def generate_key() -> bytes:
+    return secrets.token_urlsafe(48).encode()
+
+
+def _fernet(key: bytes) -> Fernet:
+    return Fernet(base64.urlsafe_b64encode(hashlib.sha256(key).digest()))
+
+
+def write_assignments(file_path: Path, assignments, key: bytes | None = None):
+    pairs = [[a, b] for a, b in assignments]
+    if key is not None:
+        fernet = _fernet(key)
+        pairs = [[a, fernet.encrypt(b.encode()).decode("utf-8")] for a, b in pairs]
+    Path(file_path).write_text(json.dumps(pairs))
+
+
+def load(file: Path, key: bytes | None = None) -> list[tuple[str, str]]:
+    raw = json.loads(Path(file).read_text())
     if key is None:
-        with file_path.open("w") as f:
-            f.write(json.dumps(assignments))
-    else:
-        m = hashlib.sha256()
-        m.update(key)
-        key = base64.urlsafe_b64encode(m.digest())
-        fernet = Fernet(key)
-        encrypted = [
-            (k, fernet.encrypt(v.encode()).decode("utf-8")) for k, v in assignments
-        ]
-        for a, b in encrypted:
-            c = fernet.decrypt(bytes(b, "utf-8"))
-        with file_path.open("w") as f:
-            f.write(json.dumps(encrypted))
+        return [(a, b) for a, b in raw]
+    fernet = _fernet(key)
+    return [(a, fernet.decrypt(b.encode("utf-8")).decode("utf-8")) for a, b in raw]
 
 
-def store_assignments(directory, assignments, key=None):
-    now = datetime.datetime.now()
-    history_dir = Path(directory, "history")
-    if not history_dir.exists():
-        history_dir.mkdir(parents=True)
-    history_file = history_dir / f"{now.year}.json"
+def history_dir(directory) -> Path:
+    path = Path(directory) / "history"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def history_files(directory) -> list[Path]:
+    return sorted(history_dir(directory).glob("*.json"))
+
+
+def store_assignments(directory, assignments, key=None, year: int | None = None):
+    year = year or current_year()
+    history_file = history_dir(directory) / f"{year}.json"
     if history_file.exists():
         raise FileExistsError(
-            f"Assignments already exist for year {now.year}!"
+            f"Assignments already exist for year {year}! "
             f"To create new assignments please delete {history_file} first."
         )
     write_assignments(history_file, assignments, key)
+    return history_file
 
 
-def load(file, key=None):
-    raw = json.loads(file.open().read())
-    if key is None:
-        return raw
-    else:
-
-        m = hashlib.sha256()
-        m.update(key)
-        key = base64.urlsafe_b64encode(m.digest())
-        fernet = Fernet(key)
-        decoded = [(a, fernet.decrypt(bytes(b, "utf-8")).decode("utf-8")) for a, b in raw]
-        return decoded
-
-
-def read_assignments(directory, history=True, key=None):
-    history_dir = Path(directory, "history")
-    if not history_dir.exists():
-        history_dir.mkdir(parents=True)
+def read_assignments(directory, history=True, key=None, year: int | None = None):
     if history:
-        historical_assignments = {
-            history_file.name[:-5]: load(history_file, key=key)
-            for history_file in history_dir.iterdir()
-        }
-        return historical_assignments
-    else:
-        year = datetime.datetime.now().year
-        try:
-            assignments = load((history_dir / f"{year}.json"), key=key)
-            return assignments
-        except FileNotFoundError as e:
-            raise ValueError(
-                f"Assignments have not yet been created for {year}! "
-                f"Please run `new-assignments --save`"
-            ) from e
+        return {f.stem: load(f, key=key) for f in history_files(directory)}
+    year = year or current_year()
+    history_file = history_dir(directory) / f"{year}.json"
+    if not history_file.exists():
+        raise ValueError(
+            f"Assignments have not yet been created for {year}! "
+            f"Please run `new-assignments --save`"
+        )
+    return load(history_file, key=key)
+
+
+def rekey(directory, old_key: bytes | None, new_key: bytes | None) -> list[Path]:
+    """Re-encode every history file from ``old_key`` to ``new_key``.
+    Everything is decoded first so a bad old key fails before any writes."""
+    files = history_files(directory)
+    decoded = [(f, load(f, key=old_key)) for f in files]
+    for f, pairs in decoded:
+        write_assignments(f, pairs, key=new_key)
+    return files

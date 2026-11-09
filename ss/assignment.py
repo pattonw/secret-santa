@@ -1,115 +1,132 @@
-from mip import Model, BINARY, minimize, xsum, OptimizationStatus
+"""Build secret santa assignments with a small integer program.
+
+Hard constraints:
+  * everyone gives exactly one gift and receives exactly one gift
+  * nobody gives to themselves or to anyone in their own group
+  * no reciprocal pairs (a -> b and b -> a), unless ``allow_reciprocal`` is set
+
+Soft objective: minimise the number of (gifter, giftee) pairs that have
+happened in a previous year.  Ties are broken randomly, and the random
+noise is scaled so that it can never outweigh a single historical repeat.
+"""
+
+from __future__ import annotations
 
 import itertools
 import random
-import json
+from dataclasses import dataclass
+
+import numpy as np
+from scipy.optimize import Bounds, LinearConstraint, milp
 
 
-def count(current):
-    while True:
-        yield (current)
-        current += 1
+def normalize(name: str) -> str:
+    return " ".join(str(name).split()).lower()
 
 
-def emails(config):
-    participant_emails = {}
-
-    groups = config.groups
-    for group_name, g in groups.items():
-        for person in g:
-            participant_emails.setdefault(person.name, person.email)
-
-    return participant_emails
+def display_name(name: str) -> str:
+    return " ".join(part.capitalize() for part in normalize(name).split(" "))
 
 
-def assignment(config, history):
-    participant_id = count(0)
+@dataclass(frozen=True)
+class Participant:
+    name: str
+    email: str | None
+    group: str
 
-    participants = {}
-    no_match_constraints = []
+    @property
+    def display(self) -> str:
+        return display_name(self.name)
 
-    groups = config.groups
-    for group_name, g in groups.items():
-        group_constraints = set()
-        for person in g:
-            participants.setdefault(person.name, next(participant_id))
-            group_constraints.add(person.name)
-        no_match_constraints.append(group_constraints)
 
-    pairings = list(itertools.product(participants.keys(), participants.keys()))
-    var_ids = {pairing: i for i, pairing in enumerate(pairings)}
+def participants(config) -> dict[str, Participant]:
+    """Flatten the config's groups into a name -> Participant mapping."""
+    found: dict[str, Participant] = {}
+    for group_name, members in config.groups.items():
+        for person in members or []:
+            name = normalize(person.name)
+            if name in found:
+                raise ValueError(
+                    f"participant {name!r} appears twice "
+                    f"(groups {found[name].group!r} and {group_name!r})"
+                )
+            found[name] = Participant(name, person.get("email"), str(group_name))
+    if len(found) < 2:
+        raise ValueError("need at least two participants")
+    return found
 
-    m = Model()
-    variables = [m.add_var(var_type=BINARY, name=json.dumps(pair)) for pair in pairings]
 
-    # add no_match_constraings:
-    not_allowed = [
-        (person_a, person_b)
-        for people in no_match_constraints
-        for person_a, person_b in itertools.product(people, people)
-    ]
+def emails(config) -> dict[str, str | None]:
+    return {p.name: p.email for p in participants(config).values()}
 
-    # add no self matching
-    not_allowed += [(participant, participant) for participant in participants]
 
-    for match in not_allowed:
-        m += variables[var_ids[match]] == 0
+def by_email(config) -> dict[str, str]:
+    """email (lower-cased) -> participant name."""
+    return {
+        p.email.strip().lower(): p.name
+        for p in participants(config).values()
+        if p.email
+    }
 
-    # make sure everyone matches
-    for participant in participants:
-        participant_gives = []
-        for pairing in pairings:
-            if participant == pairing[0]:
-                participant_gives.append(pairing)
-        m += xsum([variables[var_ids[pairing]] for pairing in participant_gives]) == 1
 
-    # make sure everyone get one present
-    for patricipant in participants:
-        participant_gets = []
-        for pairing in pairings:
-            if patricipant == pairing[1]:
-                participant_gets.append(pairing)
-        m += xsum([variables[var_ids[pairing]] for pairing in participant_gets]) == 1
+def assignment(config, history, seed=None) -> tuple[list[tuple[str, str]], int]:
+    """Return ``(pairs, repeats)``: the chosen (gifter, giftee) pairs and how
+    many of them repeat an assignment found in ``history``."""
+    people = participants(config)
+    names = list(people)
+    n = len(names)
+    allow_reciprocal = bool(config.get("allow_reciprocal", False))
 
-    # make sure if a -> b then b !> a
-    for person_a, person_b in itertools.combinations(participants, 2):
-        m += (
-            variables[var_ids[(person_a, person_b)]]
-            + variables[var_ids[(person_b, person_a)]]
-            <= 1
-        )
+    pairs = [(a, b) for a in names for b in names]
+    index = {pair: i for i, pair in enumerate(pairs)}
+    rng = random.Random(seed)
 
-    # add random costs to get random pairings
-    weights = [random.random() for _ in range(len(variables))]
+    # exactly n variables end up selected, so total noise is < 1 < one repeat
+    cost = np.array([rng.random() / n for _ in pairs])
+    repeat_penalty = np.zeros(len(pairs))
+    for _year, previous in history.items():
+        for gifter, giftee in previous:
+            i = index.get((normalize(gifter), normalize(giftee)))
+            if i is not None:  # people who left no longer have a variable
+                repeat_penalty[i] += 1.0
+    cost += repeat_penalty
 
-    # minimize historical overlap
-    # simply adds 1 extra weight to any assignment that has been made before
-    for date, previous_assignment in history.items():
-        for gifter, giftee in previous_assignment:
-            var_id = var_ids.get((gifter, giftee))
-            if var_id is not None:
-                # handle case someone left and no longer has a variable
-                weights[var_id] += 1
+    upper = np.ones(len(pairs))
+    for a, b in pairs:
+        if a == b or people[a].group == people[b].group:
+            upper[index[(a, b)]] = 0.0
 
-    m.objective = minimize(
-        xsum(variables[i] * weights[i] for i in range(len(variables)))
+    rows, lows, highs = [], [], []
+    for person in names:
+        gives = np.zeros(len(pairs))
+        gets = np.zeros(len(pairs))
+        for other in names:
+            gives[index[(person, other)]] = 1.0
+            gets[index[(other, person)]] = 1.0
+        rows += [gives, gets]
+        lows += [1.0, 1.0]
+        highs += [1.0, 1.0]
+    if not allow_reciprocal:
+        for a, b in itertools.combinations(names, 2):
+            row = np.zeros(len(pairs))
+            row[index[(a, b)]] = 1.0
+            row[index[(b, a)]] = 1.0
+            rows.append(row)
+            lows.append(0.0)
+            highs.append(1.0)
+
+    result = milp(
+        c=cost,
+        constraints=LinearConstraint(np.array(rows), lows, highs),
+        integrality=np.ones(len(pairs)),
+        bounds=Bounds(np.zeros(len(pairs)), upper),
+        options={"time_limit": 300},
     )
-
-    m.max_gap = 0.05
-    status = m.optimize(max_seconds=300)
-    if status == OptimizationStatus.OPTIMAL:
-        print("optimal solution cost {} found".format(m.objective_value))
-    elif status == OptimizationStatus.FEASIBLE:
-        print(
-            "sol.cost {} found, best possible: {}".format(
-                m.objective_value, m.objective_bound
-            )
+    if not result.success or result.x is None:
+        raise RuntimeError(
+            "no feasible assignment exists for this config "
+            f"({result.message}). Check the groups and allow_reciprocal."
         )
-    elif status == OptimizationStatus.NO_SOLUTION_FOUND:
-        print(
-            "no feasible solution found, lower bound is: {}".format(m.objective_bound)
-        )
-    if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
-        for v in m.vars:
-            if abs(v.x) > 1e-6:
-                yield json.loads(v.name)
+    chosen = [pairs[i] for i in range(len(pairs)) if result.x[i] > 0.5]
+    repeats = int(sum(repeat_penalty[index[p]] > 0 for p in chosen))
+    return chosen, repeats

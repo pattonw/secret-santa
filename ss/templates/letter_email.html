@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<title>{{ subject }}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0e2a1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0e2a1f;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+        <tr>
+          <td align="center" style="padding:0 0 18px;font-family:Georgia,'Times New Roman',serif;color:#d9c89a;font-size:13px;letter-spacing:3px;text-transform:uppercase;">
+            &#128238; Santa's Post &nbsp;&middot;&nbsp; {{ family or "Secret Santa" }} {{ year }}
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color:#fbf5e6;border-radius:6px;padding:36px 36px 30px;font-family:Georgia,'Times New Roman',serif;color:#2b2419;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8b1e2d;padding-bottom:18px;border-bottom:1px solid #e3d7bc;">
+                  A letter from {{ from_label }}
+                </td>
+              </tr>
+              <tr>
+                <td style="font-size:17px;line-height:1.65;padding:22px 0 14px;">Dear {{ recipient }},</td>
+              </tr>
+              {% for paragraph in paragraphs %}
+              <tr>
+                <td style="font-size:17px;line-height:1.65;padding-bottom:14px;white-space:pre-wrap;">{{ paragraph }}</td>
+              </tr>
+              {% endfor %}
+              <tr>
+                <td style="font-size:17px;line-height:1.65;padding:6px 0 26px;">
+                  &mdash; <span style="color:#8b1e2d;">{{ signature }}{% if anonymous %} &#127877;{% endif %}</span>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding-bottom:8px;">
+                  <a href="mailto:{{ reply_address }}?subject={{ reply_subject | urlencode }}" style="display:inline-block;background-color:#8b1e2d;color:#fbf5e6;text-decoration:none;font-size:16px;padding:12px 26px;border-radius:999px;">Write back to {{ reply_label }}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:18px 12px 0;font-family:Georgia,'Times New Roman',serif;color:#9bb3a3;font-size:12px;line-height:1.7;">
+            Replying to this email also works: Santa carries letters both ways{% if anonymous %} and never reveals who your Secret Santa is{% endif %}.<br>
+            Quoted text and signatures are removed before delivery, so write your reply at the top.
+            {% if link %}<br><a href="{{ link }}" style="color:#d9c89a;">Open your own letter</a>{% endif %}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,14 @@
+Santa's Post - {{ family or "Secret Santa" }} {{ year }}
+A letter from {{ from_label }}
+
+Dear {{ recipient }},
+
+{{ body }}
+
+-- {{ signature }}
+
+Write back to {{ reply_label }}: {{ reply_address }}
+(Replying to this email also works. Quoted text and signatures are removed before delivery.)
+{% if link %}
+Open your own letter: {{ link }}
+{% endif %}

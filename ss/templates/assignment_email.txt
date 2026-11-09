@@ -1,0 +1,23 @@
+{{ family or "Secret Santa" }} - {{ year }}
+
+Dear {{ gifter }},
+
+Your Secret Santa assignment for {{ year }} is sealed inside this letter.
+{% if link %}
+Open it here:
+{{ link }}
+{% else %}
+This year you are the Secret Santa for {{ giftee }}.
+{% endif %}
+{% if wishlist %}
+Please add a few wishes to the wishlist{% if deadline %} by {{ deadline }}{% endif %}:
+{{ wishlist }}
+{% elif deadline %}
+Please have your wishes in by {{ deadline }}.
+{% endif %}
+{% if notes %}
+{{ notes }}
+{% endif %}
+
+Keep it secret,
+{{ santa_name }}
