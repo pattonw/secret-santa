@@ -4,23 +4,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
 <title>{{ subject }}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#0e2a1f;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0e2a1f;">
   <tr>
     <td align="center" style="padding:32px 16px;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;table-layout:fixed;">
         <tr>
           <td align="center" style="padding:0 0 18px;font-family:Georgia,'Times New Roman',serif;color:#d9c89a;font-size:13px;letter-spacing:3px;text-transform:uppercase;">
             &#128238; Santa's Post &nbsp;&middot;&nbsp; {{ family or "Secret Santa" }} {{ year }}
           </td>
         </tr>
         <tr>
-          <td style="background-color:#fbf5e6;border-radius:6px;padding:36px 36px 30px;font-family:Georgia,'Times New Roman',serif;color:#2b2419;">
+          <td style="background-color:#143826;border:1px solid #23523b;border-radius:6px;padding:36px 36px 30px;font-family:Georgia,'Times New Roman',serif;color:#f1e3c4;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr>
-                <td style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8b1e2d;padding-bottom:18px;border-bottom:1px solid #e3d7bc;">
+                <td style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#d9c89a;padding-bottom:18px;border-bottom:1px solid #23523b;">
                   A letter from {{ from_label }}
                 </td>
               </tr>
@@ -34,12 +36,12 @@
               {% endfor %}
               <tr>
                 <td style="font-size:17px;line-height:1.65;padding:6px 0 26px;">
-                  &mdash; <span style="color:#8b1e2d;">{{ signature }}{% if anonymous %} &#127877;{% endif %}</span>
+                  &mdash; <span style="color:#d9c89a;">{{ signature }}{% if anonymous %} &#127877;{% endif %}</span>
                 </td>
               </tr>
               <tr>
                 <td align="center" style="padding-bottom:8px;">
-                  <a href="mailto:{{ reply_address }}?subject={{ reply_subject | urlencode }}" style="display:inline-block;background-color:#8b1e2d;color:#fbf5e6;text-decoration:none;font-size:16px;padding:12px 26px;border-radius:999px;">Write back to {{ reply_label }}</a>
+                  <a href="mailto:{{ reply_address }}?subject={{ reply_subject | urlencode }}" style="display:inline-block;background-color:#d9c89a;color:#0e2a1f;font-weight:bold;text-decoration:none;font-size:16px;padding:12px 26px;border-radius:999px;">Write back to {{ reply_label }}</a>
                 </td>
               </tr>
             </table>
