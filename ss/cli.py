@@ -202,7 +202,7 @@ def render(ctx, real, out, open_browser):
     c = ctx.obj["config"]
     directory = ctx.obj["directory"]
     year = current_year()
-    out = Path(out) if out else directory / "preview"
+    out = (Path(out) if out else directory / "preview").resolve()
     out.mkdir(parents=True, exist_ok=True)
 
     local_page = _local_page()
