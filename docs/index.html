@@ -136,11 +136,13 @@
   .post h2 { font-size: 13px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--wax); margin: 0 0 8px; font-weight: 600; }
   .post .note { margin-bottom: 16px; }
   .fallback { margin-top: 14px; font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
-  .fallback .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 4px; }
-  .fallback code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; background: rgba(0,0,0,.05); padding: 2px 6px; border-radius: 4px; word-break: break-all; }
+  .fallback .item { margin-top: 10px; }
+  .fallback .item span { display: block; font-style: italic; }
+  .fallback code { display: inline-block; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; background: rgba(0,0,0,.05); padding: 3px 8px; border-radius: 4px; word-break: break-all; margin: 2px 0 6px; }
+  .fallback .btns { display: flex; gap: 8px; }
   .fallback button, .fallback a.mini { font: inherit; font-size: 13px; color: var(--wax); background: transparent; border: 1px solid var(--paper-edge); border-radius: 999px; padding: 3px 10px; cursor: pointer; text-decoration: none; }
   .fallback button:hover, .fallback a.mini:hover { border-color: var(--wax); }
-  .signoff { margin-top: 26px; }
+  .signoff { margin-top: 34px; }
   .signoff .santa { font-family: "Caveat", cursive; font-size: 32px; color: var(--wax); display: block; margin-top: 2px; }
   .footer { margin-top: 26px; font-size: 12px; color: #9bb3a3; text-align: center; letter-spacing: .5px; line-height: 1.7; max-width: 560px; }
   .footer a { color: var(--gold); }
@@ -290,7 +292,7 @@
       { label: "your Secret Santa", address: local + "+to-santa@" + domain, subject: "A letter for my Secret Santa" },
       { label: data.t, address: local + "+to-giftee@" + domain, subject: "A letter for " + data.t }
     ].forEach(function (item) {
-      var row = document.createElement("div"); row.className = "row";
+      var row = document.createElement("div"); row.className = "item";
       var code = document.createElement("code"); code.textContent = item.address;
       var copy = document.createElement("button"); copy.type = "button"; copy.textContent = "copy";
       copy.addEventListener("click", function () {
@@ -300,7 +302,8 @@
       });
       var g = document.createElement("a"); g.className = "mini"; g.href = gmail(item.address, item.subject); g.target = "_blank"; g.rel = "noopener"; g.textContent = "compose in Gmail";
       var who = document.createElement("span"); who.textContent = item.label + ":";
-      row.appendChild(who); row.appendChild(code); row.appendChild(copy); row.appendChild(g);
+      var btns = document.createElement("div"); btns.className = "btns"; btns.appendChild(copy); btns.appendChild(g);
+      row.appendChild(who); row.appendChild(code); row.appendChild(btns);
       fallback.appendChild(row);
     });
   } else {
