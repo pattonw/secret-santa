@@ -19,7 +19,7 @@ from email.utils import getaddresses, parseaddr
 from html.parser import HTMLParser
 
 from .assignment import by_email, display_name, emails, normalize
-from .emails import TAG_TO_GIFTEE, TAG_TO_SANTA, TAGS, build_letter_email, send_email
+from .emails import TAG_TO_GIFTEE, TAG_TO_SANTA, TAGS, build_letter_email, full_tag, relay_prefix, send_email
 
 IMAP_HOST = "imap.gmail.com"
 RELAY_LABEL = "Santa Relay"
@@ -28,20 +28,38 @@ SKIPPED_LABEL = "Santa Relay/Skipped"
 ADDRESS_HEADERS = ("Delivered-To", "To", "Cc", "X-Original-To", "Envelope-To", "X-Forwarded-To")
 
 
-def detect_tag(message, sender: str) -> str | None:
-    """Which plus-tag was this message sent to, if any."""
+def detect_tag(message, sender: str, prefix: str | None = None) -> str | None:
+    """Which direction (``to-santa`` / ``to-giftee``) was this message sent
+    in, if it was addressed to one of *this* relay's plus-tags.  With a
+    ``prefix`` only ``+<prefix>-to-santa`` style addresses count."""
+    wanted = {full_tag(tag, prefix): tag for tag in TAGS}
+    for tag in plus_tags(message, sender):
+        if tag in wanted:
+            return wanted[tag]
+    return None
+
+
+def plus_tags(message, sender: str) -> list[str]:
+    """Every plus-tag on the santa address this message was sent to."""
     local, _, domain = str(sender).lower().partition("@")
     addresses = []
     for header in ADDRESS_HEADERS:
         for value in message.get_all(header, []):
             addresses += [addr for _, addr in getaddresses([str(value)])]
+    tags = []
     for address in addresses:
         addr_local, _, addr_domain = address.lower().partition("@")
         if addr_domain == domain and addr_local.startswith(local + "+"):
-            tag = addr_local[len(local) + 1:]
-            if tag in TAGS:
-                return tag
-    return None
+            tags.append(addr_local[len(local) + 1:])
+    return tags
+
+
+def for_another_relay(message, sender: str, prefix: str | None = None) -> bool:
+    """Addressed to a santa-post tag that belongs to a different config
+    sharing this inbox (``+test-to-santa`` seen by the real relay, or
+    ``+to-santa`` seen by the test one).  Such letters must be left unseen."""
+    ours = {full_tag(tag, prefix) for tag in TAGS}
+    return any(tag not in ours and tag.endswith(TAGS) for tag in plus_tags(message, sender))
 
 
 def route(tag: str, writer: str, assignments) -> str | None:
@@ -166,9 +184,13 @@ def process_message(config, config_dir, raw: bytes, assignments, year: int, send
     if writer is None:
         summary["reason"] = "sender is not a participant"
         return summary
-    tag = detect_tag(message, sender)
+    prefix = relay_prefix(config)
+    tag = detect_tag(message, sender, prefix)
     if tag is None:
-        summary["reason"] = "not addressed to +to-santa or +to-giftee"
+        if for_another_relay(message, sender, prefix):
+            summary.update(status="ignored", reason="addressed to another relay sharing this inbox")
+        else:
+            summary["reason"] = f"not addressed to +{full_tag(TAG_TO_SANTA, prefix)} or +{full_tag(TAG_TO_GIFTEE, prefix)}"
         return summary
     body = strip_quoted(extract_text(message))
     if not body:
@@ -215,6 +237,9 @@ def relay_once(config, config_dir, assignments, year: int, dry_run: bool = False
                 summary = process_message(config, config_dir, raw, assignments, year, send)
             except Exception as exc:  # leave the message unseen for a retry
                 log(f"error handling message {uid.decode()}: {exc!r}")
+                continue
+            if summary["status"] == "ignored":
+                # another config's relay owns this one; don't mark it seen
                 continue
             summaries.append(summary)
             label = RELAY_LABEL if summary["status"] == "relayed" else SKIPPED_LABEL

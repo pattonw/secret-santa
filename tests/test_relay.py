@@ -1,8 +1,13 @@
+import email
+from email import policy
 from email.message import EmailMessage
 
 import pytest
+from omegaconf import OmegaConf
 
-from ss.relay import detect_tag, extract_text, html_to_text, process_message, route, strip_quoted
+from ss.assignment import emails
+from ss.emails import plus_address
+from ss.relay import detect_tag, extract_text, for_another_relay, html_to_text, process_message, route, strip_quoted
 
 ASSIGNMENTS = [("a", "c"), ("c", "f"), ("f", "a"), ("b", "d"), ("d", "g"), ("g", "h"), ("h", "ana maria"), ("ana maria", "b")]
 
@@ -119,3 +124,35 @@ def test_extract_text_prefers_plain(config):
     msg.set_content("plain words")
     msg.add_alternative("<p>html words</p>", subtype="html")
     assert extract_text(msg) == "plain words\n"
+
+
+def test_detect_tag_with_prefix():
+    msg = raw_message("a@example.com", "santa+test-to-santa@example.com", "hi")
+    msg = email.message_from_bytes(msg, policy=policy.default)
+    assert detect_tag(msg, "santa@example.com") is None
+    assert detect_tag(msg, "santa@example.com", "test") == "to-santa"
+    assert for_another_relay(msg, "santa@example.com") is True
+    assert for_another_relay(msg, "santa@example.com", "test") is False
+    plain = email.message_from_bytes(raw_message("a@example.com", "santa+to-giftee@example.com", "hi"), policy=policy.default)
+    assert detect_tag(plain, "santa@example.com", "test") is None
+    assert for_another_relay(plain, "santa@example.com", "test") is True
+    assert for_another_relay(plain, "santa@example.com") is False
+
+
+def test_shared_inbox_relays_only_own_tag(config, tmp_path):
+    """A test config and the real one share an inbox; each must leave the
+    other's letters alone (unseen) instead of skipping them."""
+    sent = []
+    send = lambda to, msg: sent.append((to, msg))
+    test_config = OmegaConf.merge(config, {"relay_tag": "test"})
+    writer = emails(config)[ASSIGNMENTS[0][0]]
+    to_real = raw_message(writer, plus_address(config.sender, "to-giftee"), "real letter")
+    to_test = raw_message(writer, plus_address(config.sender, "to-giftee", "test"), "test letter")
+
+    assert process_message(config, tmp_path, to_test, ASSIGNMENTS, 2026, send)["status"] == "ignored"
+    assert process_message(test_config, tmp_path, to_real, ASSIGNMENTS, 2026, send)["status"] == "ignored"
+    assert sent == []
+    assert process_message(config, tmp_path, to_real, ASSIGNMENTS, 2026, send)["status"] == "relayed"
+    assert process_message(test_config, tmp_path, to_test, ASSIGNMENTS, 2026, send)["status"] == "relayed"
+    assert len(sent) == 2
+    assert "+test-to-santa@" in str(sent[1][1]["Reply-To"])

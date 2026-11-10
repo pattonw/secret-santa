@@ -107,6 +107,7 @@ base64url-encoded JSON:
 | `y` | year |
 | `s` | santa email address (for the mailto buttons) |
 | `f`, `w`, `d`, `n` | family, wishlist URL, deadline, notes (optional) |
+| `p` | relay tag prefix, when the config sets `relay_tag` (optional) |
 
 `render` copies the page next to the previews so links work offline.
 
@@ -121,6 +122,12 @@ Messages from unknown senders, without a tag, or that are empty after
 stripping quoted text are left in the inbox under the label
 `Santa Relay/Skipped`. Attachments are not forwarded. Logs never print the
 recipient of a letter.
+
+Two configs can share one santa inbox (for example a real group and a
+dress-rehearsal config) by giving one of them a `relay_tag`. With
+`relay_tag: test` its page and letters use `santa+test-to-santa@…` and
+`santa+test-to-giftee@…`, and each relay leaves the other's letters unread
+and unlabelled for the other relay to pick up.
 
 ## Templates
 

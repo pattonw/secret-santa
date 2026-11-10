@@ -16,6 +16,7 @@ from .emails import (
     build_assignment_email,
     build_letter_email,
     plus_address,
+    relay_prefix,
     send_email,
 )
 from .payload import assignment_payload, page_link
@@ -311,5 +312,6 @@ def check(ctx):
         click.secho(f"history does not decrypt with the current key: {exc!r}", fg="red")
         if not has_key_file(ctx.obj["directory"]):
             click.echo("config.yaml was probably edited; restore it, run `rekey`, then redo the edit")
-    click.echo(f"santa post addresses: {plus_address(c.sender, TAG_TO_SANTA) if c.get('sender') else '?'}, "
-               f"{plus_address(c.sender, TAG_TO_GIFTEE) if c.get('sender') else '?'}")
+    prefix = relay_prefix(c)
+    click.echo(f"santa post addresses: {plus_address(c.sender, TAG_TO_SANTA, prefix) if c.get('sender') else '?'}, "
+               f"{plus_address(c.sender, TAG_TO_GIFTEE, prefix) if c.get('sender') else '?'}")

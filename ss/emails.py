@@ -12,16 +12,20 @@ from pathlib import Path
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PackageLoader, select_autoescape
 
 from .assignment import display_name
-from .payload import assignment_link
+from .payload import assignment_link, relay_prefix
 
 TAG_TO_SANTA = "to-santa"  # a giftee writing to their (unknown) secret santa
 TAG_TO_GIFTEE = "to-giftee"  # a santa writing to their (known) giftee
 TAGS = (TAG_TO_SANTA, TAG_TO_GIFTEE)
 
 
-def plus_address(sender: str, tag: str) -> str:
+def full_tag(tag: str, prefix: str | None = None) -> str:
+    return f"{prefix}-{tag}" if prefix else tag
+
+
+def plus_address(sender: str, tag: str, prefix: str | None = None) -> str:
     local, _, domain = str(sender).partition("@")
-    return f"{local}+{tag}@{domain}"
+    return f"{local}+{full_tag(tag, prefix)}@{domain}"
 
 
 def template_env(config_dir) -> Environment:
@@ -59,8 +63,8 @@ def base_context(config, year: int) -> dict:
         "notes": config.get("notes"),
         "sender": str(config.sender),
         "santa_name": config.get("santa_name", "Secret Santa"),
-        "to_santa_address": plus_address(config.sender, TAG_TO_SANTA),
-        "to_giftee_address": plus_address(config.sender, TAG_TO_GIFTEE),
+        "to_santa_address": plus_address(config.sender, TAG_TO_SANTA, relay_prefix(config)),
+        "to_giftee_address": plus_address(config.sender, TAG_TO_GIFTEE, relay_prefix(config)),
     }
 
 
@@ -97,7 +101,7 @@ def letter_context(config, *, tag: str, recipient: str, counterpart: str, body: 
             from_label="your Secret Santa",
             signature="Your Secret Santa",
             reply_label="your Secret Santa",
-            reply_address=plus_address(config.sender, TAG_TO_SANTA),
+            reply_address=plus_address(config.sender, TAG_TO_SANTA, relay_prefix(config)),
             reply_subject="A letter for my Secret Santa",
             subject="A letter from your Secret Santa",
             link=assignment_link(config, recipient, counterpart, year, base=page_base),
@@ -110,7 +114,7 @@ def letter_context(config, *, tag: str, recipient: str, counterpart: str, body: 
             from_label=f"{name}, your giftee",
             signature=name,
             reply_label=name,
-            reply_address=plus_address(config.sender, TAG_TO_GIFTEE),
+            reply_address=plus_address(config.sender, TAG_TO_GIFTEE, relay_prefix(config)),
             reply_subject=f"A letter for {name}",
             subject=f"A letter from {name}",
             link=assignment_link(config, recipient, counterpart, year, base=page_base),

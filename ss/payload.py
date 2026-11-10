@@ -10,6 +10,16 @@ import json
 from .assignment import display_name
 
 
+def relay_prefix(config) -> str | None:
+    """Optional ``relay_tag`` so several configs can share one santa inbox:
+    with ``relay_tag: test`` the post addresses become ``+test-to-santa`` and
+    ``+test-to-giftee`` and the relays ignore each other's letters."""
+    prefix = config.get("relay_tag") if config is not None else None
+    if not prefix:
+        return None
+    return str(prefix).strip().lower() or None
+
+
 def encode_payload(data: dict) -> str:
     raw = json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode()
     return base64.urlsafe_b64encode(raw).decode().rstrip("=")
@@ -31,6 +41,9 @@ def assignment_payload(config, gifter: str, giftee: str, year: int) -> dict:
         value = config.get(field)
         if value:
             data[key] = str(value)
+    prefix = relay_prefix(config)
+    if prefix:
+        data["p"] = prefix
     return data
 
 

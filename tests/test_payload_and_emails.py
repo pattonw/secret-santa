@@ -53,3 +53,12 @@ def test_letter_from_giftee_is_signed(config, tmp_path):
     assert "Ana Maria" in html
     assert "Dear Secret Santa," in html and "Dear A," not in html
     assert plus_address("x.y@gmail.com", "to-santa") == "x.y+to-santa@gmail.com"
+
+
+def test_payload_carries_relay_prefix(config):
+    from omegaconf import OmegaConf
+    from ss.payload import assignment_payload
+    assert "p" not in assignment_payload(config, "a", "c", 2026)
+    tagged = OmegaConf.merge(config, {"relay_tag": "Test "})
+    assert assignment_payload(tagged, "a", "c", 2026)["p"] == "test"
+    assert plus_address("x.y@gmail.com", "to-santa", "test") == "x.y+test-to-santa@gmail.com"

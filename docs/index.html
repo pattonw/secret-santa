@@ -329,8 +329,11 @@
 
   if (okEmail(data.s)) {
     var local = data.s.split("@")[0], domain = data.s.split("@")[1];
+    // "p" is an optional tag prefix so several groups can share one santa inbox
+    var prefix = (typeof data.p === "string" && /^[a-z0-9-]{1,20}$/.test(data.p)) ? data.p + "-" : "";
+    var address = function (tag) { return local + "+" + prefix + tag + "@" + domain; };
     var mailto = function (tag, subject) {
-      return "mailto:" + local + "+" + tag + "@" + domain + "?subject=" + encodeURIComponent(subject);
+      return "mailto:" + address(tag) + "?subject=" + encodeURIComponent(subject);
     };
     $("post-note").textContent = "Need a hint, a size, or an address? SSPS (Santa's Secret Post System) will carry your letters with holiday cheer and weapons-grade secrecy to wherever they need to go!";
     var toSanta = document.createElement("a");
@@ -350,8 +353,8 @@
     var fallback = $("post-fallback");
     fallback.appendChild(document.createTextNode("Write from any mail app to:"));
     [
-      { label: "your Secret Santa", address: local + "+to-santa@" + domain, subject: "A letter for my Secret Santa" },
-      { label: data.t, address: local + "+to-giftee@" + domain, subject: "A letter for " + data.t }
+      { label: "your Secret Santa", address: address("to-santa"), subject: "A letter for my Secret Santa" },
+      { label: data.t, address: address("to-giftee"), subject: "A letter for " + data.t }
     ].forEach(function (item) {
       var row = document.createElement("div"); row.className = "item";
       var code = document.createElement("code"); code.textContent = item.address;
